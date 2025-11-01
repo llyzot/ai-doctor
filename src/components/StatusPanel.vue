@@ -227,6 +227,8 @@ function resetAll() {
     activeTurn: null,
     turnQueue: [],
     paused: false,
+    roundPhase: null,
+    detectedQuestions: []
   };
   store.doctors = store.doctors.map((d) => ({
     ...d,
