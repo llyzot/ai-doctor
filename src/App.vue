@@ -8,6 +8,7 @@
       </div>
       <div style="display:flex; gap:8px;">
         <a-button @click="openSessions">问诊列表</a-button>
+        <a-button @click="openCaseAnalysis" type="dashed">病例学术分析</a-button>
         <a-button @click="openGlobalSettings">全局设置</a-button>
         <a-button type="primary" @click="openConsultationSettings">问诊设置</a-button>
       </div>
@@ -34,6 +35,7 @@
   <GlobalSettingsModal v-model:open="globalSettingsOpen" />
   <ConsultationSettingsModal v-model:open="consultationSettingsOpen" />
   <SessionListDrawer v-model:open="sessionsOpen" />
+  <CaseAnalysisModal v-model:open="caseAnalysisOpen" />
 </template>
 
 <script setup>
@@ -43,6 +45,7 @@ import StatusPanel from './components/StatusPanel.vue'
 import GlobalSettingsModal from './components/GlobalSettingsModal.vue'
 import ConsultationSettingsModal from './components/ConsultationSettingsModal.vue'
 import SessionListDrawer from './components/SessionListDrawer.vue'
+import CaseAnalysisModal from './components/CaseAnalysisModal.vue'
 import { useConsultStore } from './store'
 import { useSessionsStore } from './store/sessions'
 import logoUrl from './assets/logo.svg'
@@ -50,6 +53,7 @@ import logoUrl from './assets/logo.svg'
 const globalSettingsOpen = ref(false)
 const consultationSettingsOpen = ref(false)
 const sessionsOpen = ref(false)
+const caseAnalysisOpen = ref(false)
 
 const openGlobalSettings = () => {
   globalSettingsOpen.value = true
@@ -59,6 +63,9 @@ const openConsultationSettings = () => {
 }
 const openSessions = () => {
   sessionsOpen.value = true
+}
+const openCaseAnalysis = () => {
+  caseAnalysisOpen.value = true
 }
 
 function handleOpenConsultationSettings() {
