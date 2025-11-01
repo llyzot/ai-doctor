@@ -8,7 +8,7 @@
       </div>
       <div style="display:flex; gap:8px;">
         <a-button @click="openSessions">问诊列表</a-button>
-        <a-button @click="openCaseAnalysis" type="dashed">病例分析</a-button>
+        <a-button @click="openCaseAnalysis" type="dashed">病例学术分析</a-button>
         <a-button @click="openGlobalSettings">全局设置</a-button>
         <a-button type="primary" @click="openConsultationSettings">问诊设置</a-button>
       </div>

@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:open="modalOpen"
-    title="妇产科病例创新性分析系统"
+    title="妇产科病例学术价值分析系统"
     width="1200px"
     :footer="null"
     :bodyStyle="{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }"
@@ -143,14 +143,14 @@
       </a-col>
 
       <a-col :span="14">
-        <a-card title="创新性分析结果" size="small" style="height: 100%;">
+        <a-card title="学术价值分析结果" size="small" style="height: 100%;">
           <div v-if="store.analysisResult.status === 'idle'" style="text-align: center; padding: 60px 20px; color: #8c8c8c;">
             <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;">📄</div>
             <div>请填写病例信息并选择医生后开始分析</div>
           </div>
 
           <div v-else-if="store.analysisResult.status === 'analyzing'" style="text-align: center; padding: 60px 20px;">
-            <a-spin size="large" tip="AI正在深度分析病例创新性，请稍候..." />
+            <a-spin size="large" tip="AI正在深度分析病例的学术价值与创新性，请稍候..." />
           </div>
 
           <div v-else-if="store.analysisResult.status === 'error'" style="padding: 20px;">
@@ -170,7 +170,7 @@
 
             <div class="analysis-result-container">
               <div class="result-header">
-                <h3>🔬 妇产科病例创新性分析报告</h3>
+                <h3>🔬 妇产科病例学术价值分析报告</h3>
                 <div class="patient-brief">
                   <strong>{{ localCase.name || '未命名患者' }}</strong>
                   <span v-if="localCase.gender">（{{ genderText }}）</span>
@@ -373,7 +373,7 @@ async function exportResultImage() {
   try {
     const dataUrl = await window.htmlToImage.toPng(node, { pixelRatio: 2, cacheBust: true })
     const a = document.createElement('a')
-    const fileName = localCase.value.name ? `${localCase.value.name}-病例创新性分析` : '病例创新性分析'
+    const fileName = localCase.value.name ? `${localCase.value.name}-病例学术价值分析` : '病例学术价值分析'
     a.href = dataUrl
     a.download = `${fileName}.png`
     document.body.appendChild(a)
