@@ -2,8 +2,8 @@
   <a-layout style="min-height: 100vh">
     <a-layout-header style="background:#fff; display:flex; align-items:center; justify-content:space-between; padding: 0 16px; border-bottom:1px solid #f0f0f0;">
       <div style="display:flex; align-items:center; gap:8px;">
-        <img :src="logoUrl" alt="AI 医疗会诊面板 Logo" style="width:28px; height:28px;" />
-        <span style="font-size:18px; font-weight:600;">AI 医疗会诊面板</span>
+        <img :src="logoUrl" alt="AI 妇产科会诊系统 Logo" style="width:28px; height:28px;" />
+        <span style="font-size:18px; font-weight:600;">AI 妇产科多专家会诊系统</span>
         <span style="font-size:18px; font-weight:600;color:#ff4d4f;">【本内容仅供参考，身体不适尽早就医】</span>
       </div>
       <div style="display:flex; gap:8px;">

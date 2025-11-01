@@ -76,8 +76,8 @@ export const useConsultStore = defineStore('consult', {
     consultationName: '',
     settings: {
       globalSystemPrompt:
-        '你是一位顶级的、经验丰富的临床诊断医生。你的任务是基于提供的患者病历进行分析和诊断。\n\n现在，你正在参与一个多方专家会诊。你会看到其他医生的诊断意见。请综合考虑他们的分析，这可能会启发你，但你必须保持自己独立的专业判断。\n\n你的发言必须遵循以下原则：\n1.  专业严谨: 你的分析必须基于医学知识和病历信息。\n2.  独立思考: 不要为了迎合他人而轻易改变自己的核心观点。如果其他医生的观点是正确的，你可以表示赞同并加以补充；如果观点有误或你持有不同看法，必须明确、有理有据地指出。\n3.  目标导向: 会诊的唯一目标是为患者找到最佳的解决方案。\n4.  简洁清晰: 直接陈述你的核心诊断、分析和建议。\n\n现在，请根据下面的病历和已有的讨论，发表你的看法。',
-      summaryPrompt: '请根据完整会诊内容，以临床医生口吻输出最终总结：包含核心诊断、依据、鉴别诊断、检查建议、治疗建议、随访计划和风险提示。',
+        '你是一位资深的妇产科专家医生，拥有丰富的妇产科疾病诊断和治疗经验。你的任务是基于提供的患者病历进行专业分析和诊断。\n\n你正在参与一个妇产科多专家会诊。你会看到其他妇产科医生的诊断意见。请综合考虑他们的分析，这可能会启发你，但你必须保持自己独立的专业判断。\n\n你的发言必须遵循以下原则：\n1. 专业严谨: 你的分析必须基于妇产科医学知识、循证医学证据和病历信息，特别关注月经史、婚育史、妇科检查和超声结果。\n2. 独立思考: 不要为了迎合他人而轻易改变自己的核心观点。如果其他医生的观点是正确的，你可以表示赞同并加以补充；如果观点有误或你持有不同看法，必须明确、有理有据地指出。\n3. 安全第一: 特别关注妊娠期患者的用药安全、手术指征和急症识别（如异位妊娠、卵巢扭转、胎盘早剥等）。\n4. 目标导向: 会诊的唯一目标是为患者找到最适合的妇产科诊疗方案。\n5. 简洁清晰: 直接陈述你的核心诊断、分析和建议。\n\n现在，请根据下面的病历和已有的讨论，发表你的看法。',
+      summaryPrompt: '请根据完整会诊内容，以妇产科专家口吻输出最终总结：包含核心诊断、依据、鉴别诊断、必要的妇科或产科检查建议、治疗建议（特别注意妊娠期用药）、随访计划和风险提示（特别关注急症风险）。',
       turnOrder: 'random',
       maxRoundsWithoutElimination: 3
     },
@@ -86,6 +86,8 @@ export const useConsultStore = defineStore('consult', {
       name: '',
       gender: '',
       age: null,
+      menstrualHistory: '',
+      marriageHistory: '',
       pastHistory: '',
       currentProblem: '',
       imageRecognitionResult: '',
@@ -176,7 +178,7 @@ export const useConsultStore = defineStore('consult', {
     },
     startConsultation() {
       if (!this.patientCase.name || !this.patientCase.currentProblem) {
-        throw new Error('请填写患者名称和本次问题')
+        throw new Error('请填写患者姓名和主诉')
       }
       if (!this.doctors || this.doctors.length === 0) {
         throw new Error('请添加至少一位医生后再开始会诊（可在设置中添加）')

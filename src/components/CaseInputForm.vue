@@ -28,13 +28,19 @@
           </a-form-item>
         </a-col>
       </a-row>
-      <a-form-item label="既往疾病" name="pastHistory">
-        <a-textarea v-model:value="form.pastHistory" rows="3" placeholder="既往疾病、手术史、用药史等" />
+      <a-form-item label="月经史" name="menstrualHistory">
+        <a-textarea v-model:value="form.menstrualHistory" rows="2" placeholder="初潮年龄、月经周期、经期、末次月经等" />
       </a-form-item>
-      <a-form-item label="本次问题" name="currentProblem" :rules="[{ required: true, message: '请输入本次问题' }]">
-        <a-textarea v-model:value="form.currentProblem" rows="4" placeholder="主诉与现病史" />
+      <a-form-item label="婚育史" name="marriageHistory">
+        <a-textarea v-model:value="form.marriageHistory" rows="2" placeholder="婚姻状况、孕产次、分娩方式、流产史等" />
       </a-form-item>
-      <a-form-item v-if="imageRecognitionEnabled" label="病灶图片">
+      <a-form-item label="既往病史" name="pastHistory">
+        <a-textarea v-model:value="form.pastHistory" rows="2" placeholder="妇科疾病史、手术史、用药史等" />
+      </a-form-item>
+      <a-form-item label="主诉" name="currentProblem" :rules="[{ required: true, message: '请输入主诉' }]">
+        <a-textarea v-model:value="form.currentProblem" rows="4" placeholder="主诉与现病史（如：停经、阴道出血、腹痛、白带异常等）" />
+      </a-form-item>
+      <a-form-item v-if="imageRecognitionEnabled" label="妇产科影像资料">
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <a-upload
             :before-upload="handleImageUpload"
@@ -119,6 +125,8 @@ const form = reactive({
   name: store.patientCase.name,
   gender: store.patientCase.gender,
   age: store.patientCase.age,
+  menstrualHistory: store.patientCase.menstrualHistory,
+  marriageHistory: store.patientCase.marriageHistory,
   pastHistory: store.patientCase.pastHistory,
   currentProblem: store.patientCase.currentProblem
 })
@@ -130,6 +138,8 @@ watch(
       form.name = newCase.name || ''
       form.gender = newCase.gender || ''
       form.age = newCase.age
+      form.menstrualHistory = newCase.menstrualHistory || ''
+      form.marriageHistory = newCase.marriageHistory || ''
       form.pastHistory = newCase.pastHistory || ''
       form.currentProblem = newCase.currentProblem || ''
     }
@@ -199,6 +209,8 @@ function onSubmit() {
       name: form.name,
       gender: form.gender,
       age: form.age,
+      menstrualHistory: form.menstrualHistory,
+      marriageHistory: form.marriageHistory,
       pastHistory: form.pastHistory,
       currentProblem: form.currentProblem,
       imageRecognitions: sanitizeImages()
