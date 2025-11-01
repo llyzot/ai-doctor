@@ -79,7 +79,10 @@ export const useConsultStore = defineStore('consult', {
         '你是一位资深的妇产科专家医生，拥有丰富的妇产科疾病诊断和治疗经验。你的任务是基于提供的患者病历进行专业分析和诊断。\n\n你正在参与一个妇产科多专家会诊。你会看到其他妇产科医生的诊断意见。请综合考虑他们的分析，这可能会启发你，但你必须保持自己独立的专业判断。\n\n你的发言必须遵循以下原则：\n1. 专业严谨: 你的分析必须基于妇产科医学知识、循证医学证据和病历信息，特别关注月经史、婚育史、妇科检查和超声结果。\n2. 独立思考: 不要为了迎合他人而轻易改变自己的核心观点。如果其他医生的观点是正确的，你可以表示赞同并加以补充；如果观点有误或你持有不同看法，必须明确、有理有据地指出。\n3. 安全第一: 特别关注妊娠期患者的用药安全、手术指征和急症识别（如异位妊娠、卵巢扭转、胎盘早剥等）。\n4. 目标导向: 会诊的唯一目标是为患者找到最适合的妇产科诊疗方案。\n5. 简洁清晰: 直接陈述你的核心诊断、分析和建议。\n\n【策略性要求】\n你必须展现战略性临床思维：\n- 制定分步骤的诊疗策略：先做什么检查确诊，再考虑哪些治疗方案，如何评估疗效\n- 提供备选方案：如果一线方案不适用或失败，次选方案是什么\n- 风险管理策略：识别潜在并发症，制定预防和应急预案\n- 长期管理计划：不仅关注当前问题，还要考虑随访、复发预防、生育力保护等\n\n【针对性要求】\n你的分析必须高度个体化，针对本患者的具体情况：\n- 深入分析患者的特殊性：年龄特点（如青春期、育龄期、围绝经期）、既往病史的影响、当前症状的独特之处\n- 关注关键细节：从病历中提取最有诊断价值的信息，解释其临床意义\n- 结合患者需求：考虑生育需求、手术耐受性、经济因素、依从性等个体化因素\n- 避免泛泛而谈：每一条建议都要说明"为什么适合这个患者"，而不是教科书式的通用建议\n\n现在，请根据下面的病历和已有的讨论，发表你的看法。',
       summaryPrompt: '请根据完整会诊内容，以妇产科专家口吻输出最终总结。你的总结必须体现高度的策略性和针对性：\n\n【策略性要求】\n1. 诊断策略：核心诊断及其诊断依据，鉴别诊断及排除依据（按可能性排序）\n2. 检查策略：必要的进一步检查及其目的、优先级、预期结果\n3. 治疗策略：分阶段治疗方案（急性期处理→过渡期治疗→长期管理），包含一线方案和备选方案\n4. 风险管理策略：潜在并发症识别、预防措施、应急预案（特别关注急症风险）\n5. 随访策略：随访时间点、观察指标、调整治疗的触发条件\n\n【针对性要求】\n- 针对本患者的年龄、病史、症状特点，解释为什么选择这些方案\n- 特别指出本病例的关键点和需要警惕的问题\n- 考虑患者的生育需求、手术耐受性等个体化因素\n- 提供具体的、可执行的建议（包括药物具体剂量、手术方式选择理由）\n\n请确保总结内容充实、逻辑清晰、切实可行。',
       turnOrder: 'random',
-      maxRoundsWithoutElimination: 3
+      maxRoundsWithoutElimination: 3,
+      discussionStrategy: 'multi-stage',
+      enableChallengeMode: true,
+      enableQuestionExtraction: true
     },
     doctors: [],
     patientCase: {
@@ -100,7 +103,9 @@ export const useConsultStore = defineStore('consult', {
       roundsWithoutElimination: 0,
       activeTurn: null,
       turnQueue: [],
-      paused: false
+      paused: false,
+      roundPhase: null,
+      detectedQuestions: []
     },
     discussionHistory: [],
     lastRoundVotes: [],
@@ -189,6 +194,8 @@ export const useConsultStore = defineStore('consult', {
       this.workflow.currentRound = 1
       this.workflow.roundsWithoutElimination = 0
       this.workflow.paused = false
+      this.workflow.roundPhase = null
+      this.workflow.detectedQuestions = []
       this.finalSummary = { status: 'idle', doctorId: null, doctorName: '', content: '', usedPrompt: '' }
       this.discussionHistory.push({ type: 'system', content: `第 ${this.workflow.currentRound} 轮会诊开始` })
       this.generateTurnQueue()
@@ -206,26 +213,54 @@ export const useConsultStore = defineStore('consult', {
       }
     },
     async runDiscussionRound() {
+      const strategy = this.settings.discussionStrategy || 'standard'
+      const enableChallengeMode = this.settings.enableChallengeMode || false
+
+      if (strategy === 'multi-stage' && this.workflow.currentRound === 1) {
+        await this.runStageDiscussion('initial')
+        if (enableChallengeMode) {
+          await this.runStageDiscussion('challenge')
+        }
+        await this.runStageDiscussion('consensus')
+      } else {
+        const roundPhase = enableChallengeMode && this.workflow.currentRound > 1 ? 'challenge' : null
+        await this.runStageDiscussion(roundPhase)
+      }
+
+      this.workflow.phase = 'voting'
+      this.discussionHistory.push({ type: 'system', content: '本轮发言结束，医生团队正在评估答案...' })
+      await this.autoVoteAndProceed()
+    },
+    async runStageDiscussion(roundPhase) {
+      if (roundPhase) {
+        this.workflow.roundPhase = roundPhase
+        const phaseNames = { initial: '初步诊断阶段', challenge: '质疑与辩论阶段', consensus: '共识与优化阶段' }
+        this.discussionHistory.push({ type: 'system', content: `【${phaseNames[roundPhase]}】` })
+      }
+
       for (const doctorId of this.workflow.turnQueue) {
         const doctor = this.doctors.find((d) => d.id === doctorId)
         if (!doctor || doctor.status !== 'active') continue
 
-        // 如被暂停，等待恢复
         await this.waitWhilePaused()
 
         this.workflow.activeTurn = doctorId
-        // 提示“正在输入...”，随后在得到回复后移除
         const typingIndex = this.discussionHistory.push({ type: 'system', content: `${doctor.name} 正在输入...` }) - 1
         const systemPrompt = doctor.customPrompt || this.settings.globalSystemPrompt
-        const fullPrompt = buildFullPrompt(systemPrompt, this.patientCase, this.discussionHistory, doctor.id, this.linkedConsultations)
+        const fullPrompt = buildFullPrompt(
+          systemPrompt,
+          this.patientCase,
+          this.discussionHistory,
+          doctor.id,
+          this.linkedConsultations,
+          { roundPhase, enableChallengeMode: this.settings.enableChallengeMode }
+        )
         try {
           const providerHistory = formatHistoryForProvider(this.discussionHistory, this.patientCase, doctor.id)
           const response = await callAI(doctor, fullPrompt, providerHistory)
 
-          // 移除“正在输入...”提示
           this.discussionHistory.splice(typingIndex, 1)
 
-          // 先插入空内容的医生气泡，然后打字机式填充
           const msg = { type: 'doctor', doctorId: doctor.id, doctorName: doctor.name, content: '' }
           this.discussionHistory.push(msg)
           const messageIndex = this.discussionHistory.length - 1
@@ -236,10 +271,13 @@ export const useConsultStore = defineStore('consult', {
             await delay(15)
           }
 
+          if (this.settings.enableQuestionExtraction) {
+            this.extractKeyQuestions(response, doctor)
+          }
+
           this.workflow.activeTurn = null
         } catch (e) {
           this.workflow.activeTurn = null
-          // 确保提示被移除
           try { this.discussionHistory.splice(typingIndex, 1) } catch (err) {}
           this.discussionHistory.push({
             type: 'doctor',
@@ -249,9 +287,40 @@ export const useConsultStore = defineStore('consult', {
           })
         }
       }
-      this.workflow.phase = 'voting'
-      this.discussionHistory.push({ type: 'system', content: '本轮发言结束，医生团队正在评估答案...' })
-      await this.autoVoteAndProceed()
+
+      this.workflow.roundPhase = null
+    },
+    extractKeyQuestions(text, doctor) {
+      if (!text) return
+      const questionPatterns = [
+        /(?:需要|是否|是否有|能否|可否|有没有|有没有可能).*?[？?]/g,
+        /请.*?(?:补充|提供|说明|告知).*?[？?]/g,
+        /.*?(?:什么|哪些|多久|如何|为何|为什么).*?[？?]/g
+      ]
+      const normalized = text.replace(/\s+/g, ' ')
+      const found = new Set()
+      for (const pattern of questionPatterns) {
+        const matches = normalized.match(pattern)
+        if (matches) {
+          matches.forEach((raw) => {
+            const candidate = raw.trim()
+            if (candidate.length >= 6 && candidate.length <= 120) {
+              if (!found.has(candidate) && !this.workflow.detectedQuestions.includes(candidate)) {
+                found.add(candidate)
+                if (this.workflow.detectedQuestions.length < 12) {
+                  this.workflow.detectedQuestions.push(candidate)
+                  this.discussionHistory.push({
+                    type: 'question',
+                    doctorId: doctor?.id,
+                    doctorName: doctor?.name,
+                    content: candidate
+                  })
+                }
+              }
+            }
+          })
+        }
+      }
     },
     // 控制暂停/恢复
     pause() { this.workflow.paused = true },
@@ -362,6 +431,7 @@ export const useConsultStore = defineStore('consult', {
       if (!ended) {
         this.resetVotes()
         this.workflow.currentRound += 1
+        this.workflow.detectedQuestions = []
         this.discussionHistory.push({ type: 'system', content: `第 ${this.workflow.currentRound} 轮会诊开始` })
         this.workflow.phase = 'discussion'
         this.generateTurnQueue()

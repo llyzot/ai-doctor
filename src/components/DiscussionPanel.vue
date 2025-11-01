@@ -5,7 +5,7 @@
       <div class="controls">
         <div style="display:flex; justify-content: space-between; align-items:center;">
           <div style="color:#8c8c8c; font-size:12px;">
-            当前阶段：{{ store.workflow.phase === 'discussion' ? '讨论中' : (store.workflow.phase === 'voting' ? '评估中' : (store.workflow.phase === 'finished' ? '已结束' : store.workflow.phase)) }}
+            当前阶段：{{ phaseText }}<span v-if="stageText"> · {{ stageText }}</span>
           </div>
           <div>
             <a-button 
@@ -88,6 +88,21 @@ const isRecognizingImage = ref(false)
 const canInput = computed(() => store.workflow.phase !== 'setup')
 const imageRecognitionConfig = computed(() => global.imageRecognition || {})
 const imageRecognitionEnabled = computed(() => !!imageRecognitionConfig.value?.enabled)
+
+const phaseText = computed(() => {
+  const phase = store.workflow.phase
+  if (phase === 'discussion') return '讨论中'
+  if (phase === 'voting') return '评估中'
+  if (phase === 'finished') return '已结束'
+  return phase
+})
+
+const stageText = computed(() => {
+  const roundPhase = store.workflow.roundPhase
+  if (!roundPhase) return ''
+  const names = { initial: '初步诊断', challenge: '质疑与辩论', consensus: '共识与优化' }
+  return names[roundPhase] || ''
+})
 
 function togglePause() {
   store.togglePause()

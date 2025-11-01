@@ -1,4 +1,5 @@
-export function buildFullPrompt(systemPrompt, caseInfo, discussionHistory, currentDoctorId, linkedConsultations = []) {
+export function buildFullPrompt(systemPrompt, caseInfo, discussionHistory, currentDoctorId, linkedConsultations = [], options = {}) {
+  const { roundPhase, enableChallengeMode } = options
   const caseText = formatCase(caseInfo)
   const linkedText = formatLinkedConsultations(linkedConsultations)
   const historyText = discussionHistory
@@ -17,7 +18,18 @@ export function buildFullPrompt(systemPrompt, caseInfo, discussionHistory, curre
   if (linkedText) {
     user += `\n\n【关联问诊（参考）】\n${linkedText}`
   }
-  user += `\n\n【讨论与患者补充】\n${historyText || '（暂无）'}\n\n请基于上述信息，聚焦本患者的关键问题，给出核心判断，并提供分步骤、可执行的诊疗策略与重点随访要点。`
+  user += `\n\n【讨论与患者补充】\n${historyText || '（暂无）'}\n\n`
+
+  // 根据讨论阶段调整指令
+  if (roundPhase === 'initial') {
+    user += `【当前阶段：初步诊断】\n请给出你的初步诊断思路和核心判断。重点说明：1）最可能的诊断及依据；2）需要进一步明确的关键信息；3）初步处置建议。`
+  } else if (roundPhase === 'challenge' && enableChallengeMode) {
+    user += `【当前阶段：质疑与辩论】\n请批判性地审视其他医生的观点：1）指出你认为存在疑问或不够准确的观点，并说明理由；2）提出你的不同见解及支持证据；3）如果其他医生提出了你未考虑的重要点，请补充你的分析。要敢于质疑，体现学术辩论精神。`
+  } else if (roundPhase === 'consensus') {
+    user += `【当前阶段：共识与优化】\n综合前面的讨论，请给出你的最终判断和完整的诊疗策略：1）明确诊断与鉴别诊断；2）分阶段诊疗方案（检查→治疗→随访）；3）风险管理与备选方案；4）个体化考虑因素。`
+  } else {
+    user += `请基于上述信息，聚焦本患者的关键问题，给出核心判断，并提供分步骤、可执行的诊疗策略与重点随访要点。`
+  }
 
   return { system: systemPrompt, user }
 }

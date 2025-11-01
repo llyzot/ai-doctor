@@ -36,6 +36,14 @@
       <template v-else-if="item.type === 'vote_result'">
         <div class="system-msg vote">{{ item.content }}</div>
       </template>
+      <template v-else-if="item.type === 'question'">
+        <div class="question-highlight">
+          <span class="badge question">❓关键问题</span>
+          <span class="text">
+            {{ item.doctorName }}: {{ item.content }}
+          </span>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -219,5 +227,23 @@ function initials(name) {
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 6px;
+}
+.badge.question {
+  background: #722ed1;
+}
+.question-highlight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9f0ff;
+  border: 1px solid #d3adf7;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin: 8px auto;
+  width: fit-content;
+  color: #391085;
+}
+.question-highlight .text {
+  max-width: 480px;
 }
 </style>
