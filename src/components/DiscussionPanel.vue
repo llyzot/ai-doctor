@@ -43,6 +43,15 @@
       <ChatDisplay class="chat-scroll-area" :history="store.discussionHistory" :active-id="store.workflow.activeTurn" />
       <div class="chat-input">
         <div style="display: flex; gap: 8px; width: 100%;">
+          <a-badge :count="keyQuestionsCount" :overflow-count="99">
+            <a-button
+              @click="showPatientResponseModal"
+              :disabled="keyQuestionsCount === 0"
+              title="回答医生提出的关键问题"
+            >
+              <span>💬</span>
+            </a-button>
+          </a-badge>
           <a-upload
             v-if="imageRecognitionEnabled"
             :before-upload="handleImageUpload"
@@ -68,6 +77,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Patient Response Modal -->
+    <a-modal
+      v-model:open="patientResponseOpen"
+      title="回答医生的关键问题"
+      width="900px"
+      :footer="null"
+      :bodyStyle="{ padding: 0, maxHeight: '70vh' }"
+      destroyOnClose
+    >
+      <PatientResponsePanel @submitted="onPatientResponseSubmitted" />
+    </a-modal>
   </div>
 </template>
 
@@ -78,16 +99,25 @@ import { useConsultStore } from '../store'
 import { useGlobalStore } from '../store/global'
 import CaseInputForm from './CaseInputForm.vue'
 import ChatDisplay from './ChatDisplay.vue'
+import PatientResponsePanel from './PatientResponsePanel.vue'
 import { recognizeImageWithSiliconFlow } from '../api/imageRecognition'
 
 const store = useConsultStore()
 const global = useGlobalStore()
 const input = ref('')
 const isRecognizingImage = ref(false)
+const patientResponseOpen = ref(false)
 
 const canInput = computed(() => store.workflow.phase !== 'setup')
 const imageRecognitionConfig = computed(() => global.imageRecognition || {})
 const imageRecognitionEnabled = computed(() => !!imageRecognitionConfig.value?.enabled)
+
+const keyQuestionsCount = computed(() => {
+  return (store.discussionHistory || [])
+    .filter((msg) => msg.type === 'question')
+    .slice(-12)
+    .length
+})
 
 const phaseText = computed(() => {
   const phase = store.workflow.phase
@@ -106,6 +136,14 @@ const stageText = computed(() => {
 
 function togglePause() {
   store.togglePause()
+}
+
+function showPatientResponseModal() {
+  patientResponseOpen.value = true
+}
+
+function onPatientResponseSubmitted(count) {
+  patientResponseOpen.value = false
 }
 
 function onSend() {
