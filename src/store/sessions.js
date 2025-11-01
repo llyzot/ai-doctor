@@ -106,7 +106,7 @@ export const useSessionsStore = defineStore('sessions', {
         consultationName: initialName,
         settings: undefined,
         doctors: [],
-        patientCase: { name: '', gender: '', age: null, pastHistory: '', currentProblem: '', imageRecognitionResult: '', imageRecognitions: [] },
+        patientCase: { name: '', gender: '', age: null, menstrualHistory: '', marriageHistory: '', pastHistory: '', currentProblem: '', imageRecognitionResult: '', imageRecognitions: [] },
         linkedConsultations: [],
         workflow: { phase: 'setup', currentRound: 0, roundsWithoutElimination: 0, activeTurn: null, turnQueue: [], paused: false },
         discussionHistory: [],
@@ -159,7 +159,7 @@ export const useSessionsStore = defineStore('sessions', {
         consult.consultationName = ''
         consult.settings = consult.settings
         consult.doctors = []
-        consult.setPatientCase({ name: '', gender: '', age: null, pastHistory: '', currentProblem: '', imageRecognitionResult: '', imageRecognitions: [] })
+        consult.setPatientCase({ name: '', gender: '', age: null, menstrualHistory: '', marriageHistory: '', pastHistory: '', currentProblem: '', imageRecognitionResult: '', imageRecognitions: [] })
         consult.setLinkedConsultations([], { syncPatientInfo: false })
         consult.workflow = { phase: 'setup', currentRound: 0, roundsWithoutElimination: 0, activeTurn: null, turnQueue: [], paused: false }
         consult.discussionHistory = []

@@ -101,9 +101,11 @@ function formatCase(info) {
     parts.push(`性别: ${genderMap[info.gender] || info.gender}`)
   }
   if (info.age !== null && info.age !== undefined) parts.push(`年龄: ${info.age}`)
-  if (info.pastHistory) parts.push(`既往史: ${info.pastHistory}`)
+  if (info.menstrualHistory) parts.push(`月经史: ${info.menstrualHistory}`)
+  if (info.marriageHistory) parts.push(`婚育史: ${info.marriageHistory}`)
+  if (info.pastHistory) parts.push(`既往妇科病史: ${info.pastHistory}`)
   if (info.currentProblem) parts.push(`主诉: ${info.currentProblem}`)
-  if (info.imageRecognitionResult) parts.push(`图片识别结果: ${info.imageRecognitionResult}`)
+  if (info.imageRecognitionResult) parts.push(`妇产科影像识别结果: ${info.imageRecognitionResult}`)
   return parts.join('\n')
 }
 

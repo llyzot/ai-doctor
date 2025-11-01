@@ -25,16 +25,25 @@
       <a-descriptions-item label="患者姓名">{{
         store.patientCase.name || "—"
       }}</a-descriptions-item>
+      <a-descriptions-item label="性别">{{
+        genderText
+      }}</a-descriptions-item>
       <a-descriptions-item label="年龄">{{
         store.patientCase.age ?? "—"
       }}</a-descriptions-item>
-      <a-descriptions-item label="既往疾病">
+      <a-descriptions-item label="月经史">
+        <ExpandableText :text="store.patientCase.menstrualHistory || '—'" />
+      </a-descriptions-item>
+      <a-descriptions-item label="婚育史">
+        <ExpandableText :text="store.patientCase.marriageHistory || '—'" />
+      </a-descriptions-item>
+      <a-descriptions-item label="既往妇科病史">
         <ExpandableText :text="store.patientCase.pastHistory || '—'" />
       </a-descriptions-item>
-      <a-descriptions-item label="本次问题">
+      <a-descriptions-item label="主诉">
         <ExpandableText :text="store.patientCase.currentProblem || '—'" />
       </a-descriptions-item>
-      <a-descriptions-item v-if="hasImageRecognitions" label="图片识别结果">
+      <a-descriptions-item v-if="hasImageRecognitions" label="妇产科影像识别结果">
         <ExpandableText :text="store.patientCase.imageRecognitionResult || '—'" />
       </a-descriptions-item>
     </a-descriptions>
@@ -115,10 +124,13 @@
         /> -->
         <div class="case-brief">
           <div>患者姓名：{{ store.patientCase.name || "—" }}</div>
+          <div>性别：{{ genderText }}</div>
           <div>年龄：{{ store.patientCase.age ?? "—" }}</div>
-          <div>既往疾病：{{ store.patientCase.pastHistory || "—" }}</div>
-          <div>本次问题：{{ store.patientCase.currentProblem || "—" }}</div>
-          <div v-if="store.patientCase.imageRecognitionResult">图片识别结果：{{ store.patientCase.imageRecognitionResult }}</div>
+          <div>月经史：{{ store.patientCase.menstrualHistory || "—" }}</div>
+          <div>婚育史：{{ store.patientCase.marriageHistory || "—" }}</div>
+          <div>既往妇科病史：{{ store.patientCase.pastHistory || "—" }}</div>
+          <div>主诉：{{ store.patientCase.currentProblem || "—" }}</div>
+          <div v-if="store.patientCase.imageRecognitionResult">妇产科影像识别结果：{{ store.patientCase.imageRecognitionResult }}</div>
         </div>
         <div
           v-html="renderMarkdown(store.finalSummary.content)"
@@ -150,6 +162,12 @@ const exportRef = ref(null);
 
 const imageRecognitions = computed(() => store.patientCase?.imageRecognitions || []);
 const hasImageRecognitions = computed(() => (imageRecognitions.value && imageRecognitions.value.length > 0) || !!store.patientCase?.imageRecognitionResult);
+
+const genderText = computed(() => {
+  const gender = store.patientCase.gender;
+  const genderMap = { male: '男', female: '女', other: '其他' };
+  return genderMap[gender] || gender || '—';
+});
 
 const phaseText = computed(() => {
   switch (store.workflow.phase) {
@@ -219,7 +237,10 @@ function resetAll() {
   store.lastRoundVotes = [];
   store.patientCase = {
     name: "",
+    gender: "",
     age: null,
+    menstrualHistory: "",
+    marriageHistory: "",
     pastHistory: "",
     currentProblem: "",
     imageRecognitionResult: "",
