@@ -8,6 +8,7 @@
       </div>
       <div style="display:flex; gap:8px;">
         <a-button @click="openSessions">问诊列表</a-button>
+        <a-button @click="openSessionArchive">会话归档</a-button>
         <a-button @click="openCaseAnalysis" type="dashed">病例学术分析</a-button>
         <a-button @click="openGlobalSettings">全局设置</a-button>
         <a-button type="primary" @click="openConsultationSettings">问诊设置</a-button>
@@ -36,6 +37,16 @@
   <ConsultationSettingsModal v-model:open="consultationSettingsOpen" />
   <SessionListDrawer v-model:open="sessionsOpen" />
   <CaseAnalysisModal v-model:open="caseAnalysisOpen" />
+  <a-modal
+    v-model:open="sessionArchiveOpen"
+    title="会话归档管理"
+    width="1000px"
+    :footer="null"
+    destroyOnClose
+    :bodyStyle="{ padding: '0', maxHeight: '70vh' }"
+  >
+    <SessionArchivePanel />
+  </a-modal>
 </template>
 
 <script setup>
@@ -46,13 +57,17 @@ import GlobalSettingsModal from './components/GlobalSettingsModal.vue'
 import ConsultationSettingsModal from './components/ConsultationSettingsModal.vue'
 import SessionListDrawer from './components/SessionListDrawer.vue'
 import CaseAnalysisModal from './components/CaseAnalysisModal.vue'
+import SessionArchivePanel from './components/SessionArchivePanel.vue'
+import { message } from 'ant-design-vue'
 import { useConsultStore } from './store'
 import { useSessionsStore } from './store/sessions'
+import { useSessionArchiveStore } from './store/sessionArchive'
 import logoUrl from './assets/logo.svg'
 
 const globalSettingsOpen = ref(false)
 const consultationSettingsOpen = ref(false)
 const sessionsOpen = ref(false)
+const sessionArchiveOpen = ref(false)
 const caseAnalysisOpen = ref(false)
 
 const openGlobalSettings = () => {
@@ -63,6 +78,9 @@ const openConsultationSettings = () => {
 }
 const openSessions = () => {
   sessionsOpen.value = true
+}
+const openSessionArchive = () => {
+  sessionArchiveOpen.value = true
 }
 const openCaseAnalysis = () => {
   caseAnalysisOpen.value = true
@@ -78,6 +96,7 @@ function handleOpenGlobalSettings() {
 
 const consult = useConsultStore()
 const sessions = useSessionsStore()
+const sessionArchive = useSessionArchiveStore()
 let saveTimer = null
 
 onMounted(() => {
@@ -93,6 +112,25 @@ onMounted(() => {
       saveTimer = setTimeout(() => sessions.saveSnapshotFromConsult(), 500)
     },
     { deep: true }
+  )
+  // 监听会诊结束并自动归档
+  watch(
+    () => consult.workflow.phase,
+    (newPhase, oldPhase) => {
+      const validPreviousPhases = ['discussion', 'voting']
+      if (
+        newPhase === 'finished' &&
+        validPreviousPhases.includes(oldPhase) &&
+        sessionArchive.autoArchiveEnabled
+      ) {
+        try {
+          sessionArchive.archiveCurrentSession(consult)
+          message.success('会话已自动归档')
+        } catch (e) {
+          console.error('Auto-archive failed:', e)
+        }
+      }
+    }
   )
 })
 
