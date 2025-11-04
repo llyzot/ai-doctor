@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { callAI } from '../api/callAI'
 import { buildFullPrompt, buildVotePrompt, buildFinalSummaryPrompt, formatHistoryForProvider } from '../utils/prompt'
+import { detectEmergency, getSpecialtyEnhancement } from '../utils/obgynSpecialties'
 
 function delay(ms) {
   return new Promise((res) => setTimeout(res, ms))
@@ -89,12 +90,54 @@ export const useConsultStore = defineStore('consult', {
       name: '',
       gender: '',
       age: null,
+      weight: null,
+      height: null,
       menstrualHistory: '',
       marriageHistory: '',
       pastHistory: '',
       currentProblem: '',
+      lmp: '',
+      menstrualCycle: '',
+      menarcheAge: null,
+      menopausalStatus: '',
+      gravida: null,
+      para: null,
+      abortion: null,
+      fertilityDesire: '',
+      symptoms: [],
+      historyOfPresentIllness: '',
+      gynecologicalExam: '',
+      temperature: null,
+      bloodPressure: '',
+      pulse: null,
+      labs: {
+        hcg: null,
+        hemoglobin: null,
+        ca125: null,
+        fsh: null,
+        lh: null,
+        e2: null,
+        progesterone: null,
+        testosterone: null,
+        prolactin: null
+      },
+      imaging: {
+        ultrasound: '',
+        ctMri: ''
+      },
+      pathology: {
+        tct: '',
+        hpv: '',
+        hpvType: ''
+      },
+      preliminaryDiagnosis: '',
+      treatmentGiven: '',
+      consultationPurpose: [],
+      historyNotes: '',
       imageRecognitionResult: '',
-      imageRecognitions: []
+      imageRecognitions: [],
+      calculatedFields: {},
+      aiHints: {}
     },
     linkedConsultations: [],
     workflow: {
@@ -105,7 +148,8 @@ export const useConsultStore = defineStore('consult', {
       turnQueue: [],
       paused: false,
       roundPhase: null,
-      detectedQuestions: []
+      detectedQuestions: [],
+      emergencyAlerted: false
     },
     discussionHistory: [],
     lastRoundVotes: [],
@@ -237,6 +281,16 @@ export const useConsultStore = defineStore('consult', {
         const phaseNames = { initial: '初步诊断阶段', challenge: '质疑与辩论阶段', consensus: '共识与优化阶段' }
         this.discussionHistory.push({ type: 'system', content: `【${phaseNames[roundPhase]}】` })
       }
+      
+      // 检测急诊情况（仅第一轮提示一次，但传递给所有医生）
+      const emergencyDetection = detectEmergency(this.patientCase)
+      if (this.workflow.currentRound === 1 && emergencyDetection.isEmergency && !this.workflow.emergencyAlerted) {
+        this.discussionHistory.push({ 
+          type: 'system', 
+          content: `${emergencyDetection.message}\n检测到：${emergencyDetection.keywords.map(k => k.keyword).join('、')}`
+        })
+        this.workflow.emergencyAlerted = true
+      }
 
       for (const doctorId of this.workflow.turnQueue) {
         const doctor = this.doctors.find((d) => d.id === doctorId)
@@ -247,13 +301,22 @@ export const useConsultStore = defineStore('consult', {
         this.workflow.activeTurn = doctorId
         const typingIndex = this.discussionHistory.push({ type: 'system', content: `${doctor.name} 正在输入...` }) - 1
         const systemPrompt = doctor.customPrompt || this.settings.globalSystemPrompt
+        
+        // 获取专科增强Prompt（如果医生有specialty字段）
+        const specialtyEnhancement = doctor.specialty ? getSpecialtyEnhancement(doctor.specialty) : null
+        
         const fullPrompt = buildFullPrompt(
           systemPrompt,
           this.patientCase,
           this.discussionHistory,
           doctor.id,
           this.linkedConsultations,
-          { roundPhase, enableChallengeMode: this.settings.enableChallengeMode }
+          { 
+            roundPhase, 
+            enableChallengeMode: this.settings.enableChallengeMode,
+            emergencyDetection,
+            specialtyEnhancement
+          }
         )
         try {
           const providerHistory = formatHistoryForProvider(this.discussionHistory, this.patientCase, doctor.id)

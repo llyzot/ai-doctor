@@ -1,5 +1,5 @@
 export function buildFullPrompt(systemPrompt, caseInfo, discussionHistory, currentDoctorId, linkedConsultations = [], options = {}) {
-  const { roundPhase, enableChallengeMode } = options
+  const { roundPhase, enableChallengeMode, emergencyDetection, specialtyEnhancement } = options
   const caseText = formatCase(caseInfo)
   const linkedText = formatLinkedConsultations(linkedConsultations)
   const historyText = discussionHistory
@@ -15,6 +15,14 @@ export function buildFullPrompt(systemPrompt, caseInfo, discussionHistory, curre
     .join('\n')
 
   let user = `【患者病历】\n${caseText}`
+  
+  // 急诊警示（如果检测到）
+  if (emergencyDetection && emergencyDetection.isEmergency) {
+    const keywords = emergencyDetection.keywords.map(k => k.keyword).join('、')
+    const tips = emergencyDetection.keywords.map(k => `• ${k.tip}`).join('\n')
+    user += `\n\n⚠️⚠️⚠️ 【急诊警示】 ⚠️⚠️⚠️\n检测到急症关键词：${keywords}\n${tips}\n请立即评估：\n1. 生命体征是否稳定？\n2. 是否需要紧急处理或手术？\n3. 是否需要立即转诊或多学科会诊？\n时间就是生命！`
+  }
+  
   if (linkedText) {
     user += `\n\n【关联问诊（参考）】\n${linkedText}`
   }
@@ -30,8 +38,14 @@ export function buildFullPrompt(systemPrompt, caseInfo, discussionHistory, curre
   } else {
     user += `请基于上述信息，聚焦本患者的关键问题，给出核心判断，并提供分步骤、可执行的诊疗策略与重点随访要点。`
   }
+  
+  // 应用专科增强Prompt（如果提供）
+  let enhancedSystem = systemPrompt
+  if (specialtyEnhancement) {
+    enhancedSystem += '\n\n' + specialtyEnhancement
+  }
 
-  return { system: systemPrompt, user }
+  return { system: enhancedSystem, user }
 }
 
 export function buildVotePrompt(systemPrompt, caseInfo, discussionHistory, doctors, voter, linkedConsultations = []) {

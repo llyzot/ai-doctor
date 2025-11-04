@@ -15,6 +15,7 @@ function loadGlobalDoctors() {
     {
       id: 'doc-1',
       name: 'Dr. 高危产科智能顾问',
+      specialty: 'obs-general',
       provider: 'openai',
       model: 'gpt-4o-mini',
       apiKey: '',
@@ -24,6 +25,7 @@ function loadGlobalDoctors() {
     {
       id: 'doc-2',
       name: 'Dr. 妇科微创手术专家',
+      specialty: 'gyn-minimally-invasive',
       provider: 'anthropic',
       model: 'claude-3-haiku-20240307',
       apiKey: '',
@@ -33,6 +35,7 @@ function loadGlobalDoctors() {
     {
       id: 'doc-3',
       name: 'Dr. 生殖内分泌顾问',
+      specialty: 'gyn-endocrine',
       provider: 'gemini',
       model: 'gemini-1.5-flash',
       apiKey: '',
